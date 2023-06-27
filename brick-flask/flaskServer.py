@@ -10,6 +10,12 @@ app = Flask(__name__)
 streamed_image = None
 isEscClicked = False
 isSpaceClicked = False
+heightL = -1
+heightR = -1
+calib = 0
+bottomB = 0
+modeling = 0
+
 
 
 @app.route('/upload-stream', methods=['POST'])
@@ -48,10 +54,10 @@ def get_streamed_image():
     if streamed_image is None:
         return 'No streamed image available', 404
 
-    rotated_image = cv2.rotate(streamed_image, cv2.ROTATE_90_CLOCKWISE)
+    # rotated_image = cv2.rotate(streamed_image, cv2.ROTATE_90_CLOCKWISE)
 
     # Convert the image to JPEG
-    _, img_encoded = cv2.imencode('.jpg', rotated_image)
+    _, img_encoded = cv2.imencode('.jpg', streamed_image)
 
     # Create an in-memory file-like object
     file_object = io.BytesIO(img_encoded.tobytes())
@@ -129,6 +135,35 @@ def reset_clicked_variables():
     isEscClicked = False
 
     return 'Clicked variables reset successfully'
+
+@app.route('/send-height', methods=['POST'])
+def receive_float_values():
+    global heightL
+    global heightR
+    global calib
+    global bottomB
+    global modeling
+
+    data = request.get_json()
+    heightL = data['left']
+    heightR = data['right']
+    calib = data['calib']
+    bottomB = data['bottomB']
+    modeling = data['modeling']
+
+    return 'saved'
+
+
+@app.route('/get-height', methods=['GET'])
+def get_height():
+    global heightL
+    global heightR
+    global calib
+    global bottomB
+    global modeling
+
+    return jsonify({'heightL':heightL,'heightR':heightR,'calib':calib,'bottomB':bottomB,'modeling':modeling})
+
 
 
 if __name__ == '__main__':
