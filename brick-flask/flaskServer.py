@@ -8,14 +8,13 @@ app = Flask(__name__)
 
 # Global variable to store the most recent image
 streamed_image = None
-isEscClicked = False
-isSpaceClicked = False
-heightL = -1
-heightR = -1
+end = False
+capture = False
 calib = 0
-bottomB = 0
+baseline = 0
 modeling = 0
-
+mode = 0
+image_data = []
 
 
 @app.route('/upload-stream', methods=['POST'])
@@ -36,14 +35,8 @@ def upload_stream():
     img_arr = np.frombuffer(byte_list, dtype=np.uint8)
     img = cv2.imdecode(img_arr, cv2.IMREAD_COLOR)
 
-    # Process the image as needed
-    # Example: Convert to grayscale
-    # img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
-    # Store the streamed image
     streamed_image = img
 
-    # Return a response indicating success
     return 'Image stream received and processed'
 
 
@@ -55,116 +48,122 @@ def get_streamed_image():
         return 'No streamed image available', 404
 
     # rotated_image = cv2.rotate(streamed_image, cv2.ROTATE_90_CLOCKWISE)
-
-    # Convert the image to JPEG
     _, img_encoded = cv2.imencode('.jpg', streamed_image)
 
-    # Create an in-memory file-like object
     file_object = io.BytesIO(img_encoded.tobytes())
 
-    # Set the file object's content type as image/jpeg
     file_object.seek(0)
     file_object.content_type = 'image/jpeg'
 
-    # Return the file object as a response
     return send_file(file_object, mimetype='image/jpeg', as_attachment=True, download_name="streamed_image.jpg")
 
+@app.route('/set-measured-image', methods=['POST'])
+def process_image():
+    global image_data
+    frame_bytes = request.get_data()
 
-@app.route('/get-webpage', methods=['GET'])
-def get_webpage():
-    global streamed_image
+    frame_arr = np.frombuffer(frame_bytes, np.uint8)
 
-    if streamed_image is None:
-        return 'No streamed image available', 404
+    frame = cv2.imdecode(frame_arr, cv2.IMREAD_COLOR)
+    
+    ret, jpeg = cv2.imencode('.jpg', frame)
+    frame_bytes = jpeg.tobytes()
 
-    # Rotate the image by 90 degrees clockwise
-    rotated_image = cv2.rotate(streamed_image, cv2.ROTATE_90_CLOCKWISE)
+    # Convert the frame bytes to Uint8List
+    image_data = list(frame_bytes)
 
-    # Convert the rotated image to JPEG format
-    _, img_encoded = cv2.imencode('.jpg', rotated_image)
+    # Return the image data as JSON response
+    return jsonify({'imageData': image_data})
 
-    # Convert the image bytes to base64
-    img_base64 = base64.b64encode(img_encoded).decode('utf-8')
+#-------------------------------------Getter-----------------------------------------
 
-    # Render the HTML template and pass the image data
-    return render_template('streamed_image.html', image_data=img_base64)
+@app.route('/get-mode', methods=['GET'])
+def get_mode():
+    global mode
+    if mode == 0 :
+        calib = 0
+        baseline = 0
+        modeling = 0
+    return jsonify({'mode':mode})
 
-
-@app.route('/space-clicked', methods=['POST'])
-def space_clicked():
-    global isSpaceClicked
-
-    # Set isSpaceClicked to True
-    isSpaceClicked = True
-
-    return 'Space Clicked'
-
-
-@app.route('/esc-clicked', methods=['POST'])
-def esc_clicked():
-    global isEscClicked
-
-    # Set isEscClicked to True
-    isEscClicked = True
-
-    return 'Esc Clicked'
-
-
-@app.route('/is-esc-clicked', methods=['GET'])
-def is_esc_clicked():
-    global isEscClicked
-
-    # Return the value of isEscClicked as a JSON response
-    return jsonify({'isEscClicked': isEscClicked})
-
-
-@app.route('/is-space-clicked', methods=['GET'])
-def is_space_clicked():
-    global isSpaceClicked
-
-    # Return the value of isSpaceClicked as a JSON response
-    return jsonify({'isSpaceClicked': isSpaceClicked})
-
-
-@app.route('/reset-clicked-variables', methods=['POST'])
-def reset_clicked_variables():
-    global isSpaceClicked, isEscClicked
-
-    # Reset the variables to False
-    isSpaceClicked = False
-    isEscClicked = False
-
-    return 'Clicked variables reset successfully'
-
-@app.route('/send-height', methods=['POST'])
-def receive_float_values():
-    global heightL
-    global heightR
+@app.route('/get-calib', methods=['GET'])
+def get_calib():
     global calib
-    global bottomB
+    return jsonify({'calib':calib})
+
+@app.route('/get-capture', methods=['GET'])
+def get_capture():
+    global capture
+    result = {'capture':capture}
+    capture = False
+    return jsonify(result)
+
+@app.route('/get-end', methods=['GET'])
+def get_end():
+    global end
+    result = {'end':end}
+    end = False
+    return jsonify(result)
+
+@app.route('/get-modeling', methods=['GET'])
+def get_modeling():
     global modeling
+    global baseline
+    return jsonify({'modeling':modeling,'baseline':baseline})
 
-    data = request.get_json()
-    heightL = data['left']
-    heightR = data['right']
-    calib = data['calib']
-    bottomB = data['bottomB']
-    modeling = data['modeling']
+@app.route('/get-measured-image', methods=['GET'])
+def get_measured_image():
+    global image_data
+    return jsonify({'image_data':image_data})
 
+#-------------------------------------Setter-----------------------------------------
+
+@app.route('/set-mode', methods=['POST'])
+def set_mode():
+    global mode
+    mode = request.get_json()['mode']
     return 'saved'
 
-
-@app.route('/get-height', methods=['GET'])
-def get_height():
-    global heightL
-    global heightR
+@app.route('/set-calib', methods=['POST'])
+def set_calib():
     global calib
-    global bottomB
+    calib = request.get_json()['calib']
+    return 'saved'
+
+@app.route('/set-capture', methods=['POST'])
+def set_capture():
+    global capture
+    capture = request.get_json()['capture']
+    return 'saved'
+
+@app.route('/set-end', methods=['POST'])
+def set_end():
+    global end
+    end = request.get_json()['end']
+    return 'saved'
+
+@app.route('/set-modeling', methods=['POST'])
+def set_modeling():
     global modeling
+    global baseline
+    modeling = request.get_json()['modeling']
+    baseline = request.get_json()['baseline']
+    return 'saved'
 
-    return jsonify({'heightL':heightL,'heightR':heightR,'calib':calib,'bottomB':bottomB,'modeling':modeling})
+@app.route('/reset', methods=['GET'])
+def reset():
+    global capture
+    global end
+    global calib
+    global baseline
+    global modeling
+    capture = False
+    end = False
+    calib = 0
+    baseline = 0
+    modeling = 0
 
-
+    return 'saved'
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
