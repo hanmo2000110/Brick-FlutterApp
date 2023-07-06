@@ -5,13 +5,13 @@ import 'package:brick_app/widgets/stackTexts.dart';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'controller/cameraController.dart';
-import 'functions/functions.dart';
-import 'widgets/modeSelectionPage.dart';
-import 'widgets/modelingPage.dart';
+import '../controller/cameraController.dart';
+import '../functions/functions.dart';
+import 'modeSelectionPage.dart';
+import 'modelingPage.dart';
 import 'package:http/http.dart' as http;
 
-import 'widgets/resultPage.dart';
+import 'resultPage.dart';
 
 late List<CameraDescription> cameras;
 

@@ -6,7 +6,7 @@ get calibTitle => const Positioned(
       child: RotatedBox(
         quarterTurns: 1,
         child: Text(
-          'Calibration Mode',
+          '보정 모드',
           style: TextStyle(
             color: Colors.white,
             fontSize: 24,
@@ -22,7 +22,7 @@ get modelingTitle => const Positioned(
       child: RotatedBox(
         quarterTurns: 1,
         child: Text(
-          'Modeling Mode',
+          '모델링 모드',
           style: TextStyle(
             color: Colors.white,
             fontSize: 24,
@@ -38,7 +38,7 @@ get measurementTitle => const Positioned(
       child: RotatedBox(
         quarterTurns: 1,
         child: Text(
-          'Measurement Mode',
+          '측정 모드',
           style: TextStyle(
             color: Colors.white,
             fontSize: 24,
